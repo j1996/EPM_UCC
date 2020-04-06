@@ -175,12 +175,21 @@ class SatelitteSolarPowerSystem(object):
     def visual(self):
 
         ax = trimesh.creation.axis(axis_radius=25, axis_length=200)
-        scene = trimesh.Scene([self.mesh.apply_scale(0.1), ax])
+        scene = trimesh.Scene([self.mesh.apply_scale(1), ax])
 
         return scene.show()
+    
+    def separar_satelite(self):
+        y=np.array(np.where(np.isin(d.sombra, d.Caras_Despegables))).flatten()
+        for i in y:
+            normal=self.mesh.facets_normal[3]
+            g=trimesh.intersections.slice_mesh_plane(self.mesh,
+            self.mesh.facets_normal[3],
+            self.mesh.facets_origin[3]+0.0001*self.mesh.facets_normal[3])
+
 
 if __name__ == '__main__':
-    filename= "../EPM_UCC/models/12Unuv.stl"
+    filename= "12Unuv.stl"
     d = SatelitteSolarPowerSystem(direccion=filename)
     Sun_vector =np.array([-0.10486044,  0.91244007,  0.39554696])
     W, area_potencia, ang = d.Calculo_potencia(Sun_vector)
