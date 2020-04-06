@@ -1,0 +1,4 @@
+// Gmsh project created on Wed Mar 18 16:32:15 2020
+//+
+SetFactory("OpenCASCADE");
+Rectangle(1) = {0, 0, 0, 3000, 3000, 0};

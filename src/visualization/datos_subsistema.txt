@@ -1,0 +1,18 @@
+Consumo de Comunicaciones :
+78
+Var2 de Comunicaciones :
+34
+Var3 de Comunicaciones :
+23
+Consumo de Actitud :
+24
+Var2 de Actitud :
+3
+Var3 de Actitud :
+1
+Consumo de Térmico :
+120
+Var2 de Térmico :
+2
+Var3 de Térmico :
+0
