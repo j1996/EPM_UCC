@@ -13,11 +13,15 @@ def random_generator(size=6, chars=string.ascii_uppercase + string.digits):
 def SolarAngle_a_VNB(Orbit):
     sun = get_sun(Orbit.epoch).cartesian.xyz.value
     sun = sun / np.linalg.norm(sun)
-    V = np.array(Orbit.v*u.s/(u.km*np.linalg.norm(Orbit.v)))
-    N = np.array(Orbit.r*1/(np.linalg.norm(Orbit.r)*u.km))
-    B = np.cross(Orbit.r, Orbit.v)*1/np.linalg.norm(np.cross(Orbit.r, Orbit.v))
-    VNB = [ V, N, B]
-    solardirection = np.matrix(VNB)*sun.reshape(3,1)
+    V = np.array(Orbit.v.value/(np.linalg.norm(Orbit.v)))
+    
+    N = np.array(Orbit.r.value*1/(np.linalg.norm(Orbit.r)))
+    
+    B = np.cross(Orbit.r.value, Orbit.v.value)*1/np.linalg.norm(np.cross(Orbit.r.value, Orbit.v.value))
+    
+    VNB = np.column_stack((V.reshape(3,1), N.reshape(3,1),B.reshape(3,1)))
+    
+    solardirection = np.dot(np.linalg.inv(VNB),sun.reshape(3,1))
     solardirection = np.array(solardirection).flatten()
     return solardirection
 

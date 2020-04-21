@@ -198,9 +198,12 @@ class SatelitteSolarPowerSystem(object):
             plano1=np.cross( direcion_principal, self.actitud.eje_de_spin)
 
             plano1=plano1/np.linalg.norm(plano1)
-            angulo_giro1=np.arccos(np.dot(plano0, plano1)/(np.linalg.norm(plano0)*np.linalg.norm(plano1)))
+            angulo_giro1=np.absolute(np.arccos(np.dot(plano0, plano1))/(np.linalg.norm(plano0)*np.linalg.norm(plano1)))
             plano1=-plano1
-            angulo_giro2=np.arccos(np.dot(plano0, plano1)/(np.linalg.norm(plano0)*np.linalg.norm(plano1)))
+            angulo_giro2=np.absulote(np.arccos(np.dot(plano0, plano1))/(np.linalg.norm(plano0)*np.linalg.norm(plano1)))
+                  
+                                   
+            
             if angulo_giro1<=angulo_giro2:
                 angulo_giro=angulo_giro1
             if angulo_giro1>angulo_giro2:
@@ -211,6 +214,8 @@ class SatelitteSolarPowerSystem(object):
                 pass
             else:
                 self.mesh=self.mesh.apply_transform(trimesh.transformations.rotation_matrix(angulo_giro,self.actitud.eje_de_spin,[0,0,0]))
+                
+
             ang = list(map(Sun_vector.dot, self.mesh.facets_normal))
             area_potencia = []
             W = []
