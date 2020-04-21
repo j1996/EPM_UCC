@@ -200,7 +200,7 @@ class SatelitteSolarPowerSystem(object):
             plano1=plano1/np.linalg.norm(plano1)
             angulo_giro1=np.absolute(np.arccos(np.dot(plano0, plano1))/(np.linalg.norm(plano0)*np.linalg.norm(plano1)))
             plano1=-plano1
-            angulo_giro2=np.absulote(np.arccos(np.dot(plano0, plano1))/(np.linalg.norm(plano0)*np.linalg.norm(plano1)))
+            angulo_giro2=np.absolute(np.arccos(np.dot(plano0, plano1))/(np.linalg.norm(plano0)*np.linalg.norm(plano1)))
                   
                                    
             
