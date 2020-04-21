@@ -2,9 +2,10 @@ import numpy as np
 import trimesh
 try:
     from Satellite_Panel_Solar import Panel_Solar
+    from SatelitteActitud import SatelitteActitud
 except:
     from src.data.Satellite_Panel_Solar import Panel_Solar
-
+    from src.data.SatelitteActitud import SatelitteActitud
 
 # noinspection SpellCheckingInspection
 """Satelitte Solar Power System 
@@ -28,7 +29,7 @@ Finalmente notar que el atributo mesh incluye todos aquellos del paquete trimesh
 
 class SatelitteSolarPowerSystem(object):
 
-    def __init__(self, direccion, panel_despegable_dual=True,actitud=True):
+    def __init__(self, direccion, SatelitteActitud, panel_despegable_dual=True, Despegables_orientables=False ):
         """Se inicia la clase con el analisis de la figura para
         encontrar paneles despegables, sombra, etc.
 
@@ -47,7 +48,8 @@ class SatelitteSolarPowerSystem(object):
         self.sun_plane = self.puntos_sol()
         self.panel_despegable_dual = panel_despegable_dual
         self.name = self.nombrar_caras()
-        
+        self.actitud = SatelitteActitud
+        self.Despegables_orientables=Despegables_orientables
     def cargar_modelo(self, direccion):
         """
 
@@ -159,23 +161,87 @@ class SatelitteSolarPowerSystem(object):
                 area = self.mesh.facets_area[i] / (1000 ** 2)
                 area_potencia.append(area)
 
-            if (ang_inc >= 0) & (ang_inc < ((np.pi / 180) * 75)):
+            if (ang_inc >= 0) & (ang_inc > (np.cos((np.pi / 180) * 75))):
                 W.append(area * self.caracteristicas_panel_solar[i].psolar_rendimiento * WSun * ang_inc)
             else:
                 W.append(0.)
 
         return W, area_potencia, ang
+    def power_panel_con_actitud(self, Sun_vector, WSun):
+        if self.Despegables_orientables==False:
+                
+                
+            direcion_principal=self.mesh.facets_normal[self.Caras_Despegables[0]]
+            plano0=np.cross(self.actitud.eje_de_spin, Sun_vector)
+            plano0=plano0/np.linalg.norm(plano0)
+            plano1=np.cross(self.actitud.eje_de_spin, direcion_principal)
+            plano1=plano1/np.linalg.norm(plano1)
+            angulo_giro=np.arccos(np.dot(plano0, plano1)/(np.linalg.norm(plano0)*np.linalg.norm(plano1)))
+            if np.isnan(angulo_giro):
+                angulo_giro=0.0
+            elif angulo_giro==0:
+                pass
+            else:
+                self.mesh=self.mesh.apply_transform(trimesh.transformations.rotation_matrix(angulo_giro,self.actitud.eje_de_spin,[0,0,0]))
+            index_tri = self.celdas_activas(Sun_vector)
+            W, area_potencia, ang = self.power_panel_solar(index_tri, Sun_vector, WSun)
+            
+            return W, area_potencia, ang, angulo_giro
+        
+        else :
+            
+            direcion_principal=self.mesh.facets_normal[self.Caras_Despegables[0]]
+            
+            plano0=np.cross( Sun_vector, self.actitud.eje_de_spin)
+            plano0=plano0/np.linalg.norm(plano0)
+
+            plano1=np.cross( direcion_principal, self.actitud.eje_de_spin)
+
+            plano1=plano1/np.linalg.norm(plano1)
+            angulo_giro1=np.arccos(np.dot(plano0, plano1)/(np.linalg.norm(plano0)*np.linalg.norm(plano1)))
+            plano1=-plano1
+            angulo_giro2=np.arccos(np.dot(plano0, plano1)/(np.linalg.norm(plano0)*np.linalg.norm(plano1)))
+            if angulo_giro1<=angulo_giro2:
+                angulo_giro=angulo_giro1
+            if angulo_giro1>angulo_giro2:
+                angulo_giro=angulo_giro2
+            if np.isnan(angulo_giro):
+                angulo_giro=0.0
+            elif angulo_giro==0:
+                pass
+            else:
+                self.mesh=self.mesh.apply_transform(trimesh.transformations.rotation_matrix(angulo_giro,self.actitud.eje_de_spin,[0,0,0]))
+            ang = list(map(Sun_vector.dot, self.mesh.facets_normal))
+            area_potencia = []
+            W = []
+            angulo_giro=[angulo_giro]
+            for i in np.arange(0, len(self.mesh.facets)):
+                area = self.mesh.facets_area[i] / (1000 ** 2)
+                area_potencia.append(area)
+                if (i in self.Caras_Despegables):
+                    angulo_giro.append(np.arccos(ang[i]))
+                    ang[i] = 1
+                if (ang[i] >= 0) & (ang[i] > (np.cos((np.pi / 180) * 75))):
+                    W.append(area * self.caracteristicas_panel_solar[i].psolar_rendimiento * WSun * ang[i])
+                else:
+                    W.append(0.)
+            return W, area_potencia, ang, angulo_giro 
 
     def Calculo_potencia(self, Sun_vector, WSun=1310):
-        index_tri = self.celdas_activas(Sun_vector)
+        if self.actitud.control_en_actitud==False:
+            index_tri = self.celdas_activas(Sun_vector)
+            W, area_potencia, ang = self.power_panel_solar(index_tri, Sun_vector, WSun)
+            angulo_giro=0.0
+        else:
+            W, area_potencia, ang, angulo_giro =self.power_panel_con_actitud(Sun_vector, WSun)
 
-        W, area_potencia, ang = self.power_panel_solar(index_tri, Sun_vector, WSun)
-        return W, area_potencia, ang
+        return W, area_potencia, ang, angulo_giro
 
     def apply_transform(self, matrix):
         self.mesh.apply_transform(matrix)
         self.name = []
         self.name = self.nombrar_caras()
+        self.Normales_caras = np.round(self.mesh.facets_normal)
     def visual(self):
 
         ax = trimesh.creation.axis(axis_radius=25, axis_length=200)
@@ -198,19 +264,10 @@ class SatelitteSolarPowerSystem(object):
 
 if __name__ == '__main__':
     filename= 'models/12Unuv.stl'
-    d = SatelitteSolarPowerSystem(direccion=filename)
+    actitud=SatelitteActitud(eje_de_spin= [0,0,1],control=True) 
+    d = SatelitteSolarPowerSystem(filename, actitud,Despegables_orientables=True)
+    d.apply_transform(trimesh.transformations.rotation_matrix(np.pi/2,[0,1,0],[0,0,0]))
     Sun_vector =np.array([-0.10486044,  0.91244007,  0.39554696])
-    W, area_potencia, ang = d.Calculo_potencia(Sun_vector)
-    g=d.separar_satelite()
-    i=3
-    g[2]=g[2].apply_transform(trimesh.transformations.rotation_matrix(0.4,d.mesh.facets_normal[i],d.mesh.facets_origin[i] ))
-    
-    g[1]=g[1].apply_transform(trimesh.transformations.rotation_matrix(0.4,d.mesh.facets_normal[i],d.mesh.facets_origin[i] ))
-    direcion_giro=d.Normales_caras[4]
-    direcion_principal=d.Normales_caras[-1]
-    plano=np.cross(direcion_principal, Sun_vector)
-    p0=trimesh.transformations.projection_matrix([0,0,0],plano)
-    proyeccion=np.dot(p0[0:3,0:3], direcion_principal)
-    proyeccion=proyeccion/np.linalg.norm(proyeccion)
-    angulo_giro=np.arccos(np.dot(proyeccion, direcion_principal))
-    
+    print(d.mesh.facets_normal)
+    W, area_potencia, ang, angulo_giro=d.power_panel_con_actitud(Sun_vector,1)
+    d.visual()
