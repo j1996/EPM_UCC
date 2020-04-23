@@ -3,3 +3,5 @@ class SatelitteActitud(object):
         self.control_en_actitud=control
         self.eje_de_spin=eje_de_spin
         self.apuntando_a_tierra=True
+        self.apuntado_sol=True
+        self.apuntado_constante_sol=True

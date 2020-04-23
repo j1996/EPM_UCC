@@ -172,32 +172,14 @@ class SatelitteSolarPowerSystem(object):
                 
                 
             direcion_principal=self.mesh.facets_normal[self.Caras_Despegables[0]]
-            plano0=np.cross(self.actitud.eje_de_spin, Sun_vector)
-            plano0=plano0/np.linalg.norm(plano0)
-            plano1=np.cross(self.actitud.eje_de_spin, direcion_principal)
-            plano1=plano1/np.linalg.norm(plano1)
-            angulo_giro=np.arccos(np.dot(plano0, plano1)/(np.linalg.norm(plano0)*np.linalg.norm(plano1)))
-            if np.isnan(angulo_giro):
-                angulo_giro=0.0
-            elif angulo_giro==0:
-                pass
-            else:
-                self.mesh=self.mesh.apply_transform(trimesh.transformations.rotation_matrix(angulo_giro,self.actitud.eje_de_spin,[0,0,0]))
-            index_tri = self.celdas_activas(Sun_vector)
-            W, area_potencia, ang = self.power_panel_solar(index_tri, Sun_vector, WSun)
-            
-            return W, area_potencia, ang, angulo_giro
-        
-        else :
-            
-            direcion_principal=self.mesh.facets_normal[self.Caras_Despegables[0]]
             
             plano0=np.cross( Sun_vector, self.actitud.eje_de_spin)
             plano0=plano0/np.linalg.norm(plano0)
-
+            print("plano0 ", plano0)
             plano1=np.cross( direcion_principal, self.actitud.eje_de_spin)
 
             plano1=plano1/np.linalg.norm(plano1)
+            print("plano1 ", plano1)
             angulo_giro1=np.absolute(np.arccos(np.dot(plano0, plano1))/(np.linalg.norm(plano0)*np.linalg.norm(plano1)))
             plano1=-plano1
             angulo_giro2=np.absolute(np.arccos(np.dot(plano0, plano1))/(np.linalg.norm(plano0)*np.linalg.norm(plano1)))
@@ -214,7 +196,37 @@ class SatelitteSolarPowerSystem(object):
                 pass
             else:
                 self.mesh=self.mesh.apply_transform(trimesh.transformations.rotation_matrix(angulo_giro,self.actitud.eje_de_spin,[0,0,0]))
+            index_tri = self.celdas_activas(Sun_vector)
+            W, area_potencia, ang = self.power_panel_solar(index_tri, Sun_vector, WSun)
+            
+            return W, area_potencia, ang, angulo_giro
+        
+        else :
+            if self.actitud.apuntado_sol==True:
+                direcion_principal=self.mesh.facets_normal[self.Caras_Despegables[0]]
                 
+                plano0=np.cross( Sun_vector, self.actitud.eje_de_spin)
+                plano0=plano0/np.linalg.norm(plano0)
+                
+                plano1=np.cross( direcion_principal, self.actitud.eje_de_spin)
+                
+                plano1=plano1/np.linalg.norm(plano1)
+                
+                angulo_giro=np.absolute(np.arccos(np.dot(plano0, plano1))/(np.linalg.norm(plano0)*np.linalg.norm(plano1)))
+                
+                
+                if np.isnan(angulo_giro):
+                    angulo_giro=0.0      
+                            
+                if angulo_giro==0:
+                    pass
+                else:
+                    prim=trimesh.transform_points(plano1.reshape(1,3), trimesh.transformations.rotation_matrix(angulo_giro,self.actitud.eje_de_spin,[0,0,0]))
+                    if not np.allclose(prim, plano0):
+                        angulo_giro=-angulo_giro
+                    self.mesh=self.mesh.apply_transform(trimesh.transformations.rotation_matrix(angulo_giro,self.actitud.eje_de_spin,[0,0,0]))
+            else:
+                angulo_giro=0.0    
 
             ang = list(map(Sun_vector.dot, self.mesh.facets_normal))
             area_potencia = []

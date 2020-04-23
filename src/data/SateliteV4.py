@@ -29,9 +29,10 @@ nu = 0 * u.deg
 time = Time("2020-01-01 12:00:00", scale="utc")
 i=0
 direccion = 'models/12Unuv.stl'
-actitud=SatelitteActitud(eje_de_spin= [0,0,1],control=True) 
+actitud=SatelitteActitud(eje_de_spin= [0,1,0],control=True) 
 EPM = SatelitteSolarPowerSystem(direccion, actitud, Despegables_orientables=True)
-EPM.apply_transform(trimesh.transformations.rotation_matrix(np.pi/2,[0,1,0],[0,0,0]))
+EPM.actitud.apuntado_constante_sol=False
+EPM.apply_transform(trimesh.transformations.rotation_matrix(np.pi/2,[0,0,1],[0,0,0]))
 
 for k in tqdm(np.arange(0, 10)):
     time_ini = time+TimeDelta(1*u.day)*k

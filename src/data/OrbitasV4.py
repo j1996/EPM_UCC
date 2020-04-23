@@ -58,7 +58,13 @@ def propagate_fast_one_orbit(a, ecc, inc,raan, nu,  time_ini,argp_ini, EPM,itera
         time = time_ini+TimeDelta(dt*u.second)*i
 
         sat = Orbit.from_classical(Earth, a, ecc, inc, raan, argp, nu, time)
+        if (EPM.actitud.apuntado_constante_sol==False) :
+            if (i==0) :
+                EPM.actitud.apuntado_sol=True
+            else:
+                EPM.actitud.apuntado_sol=False
 
+            
         if not EclipseLocator(sat):
             sun_vector = SolarAngle_a_VNB(sat)
             W, area_potencia, ang, angulo_giro = EPM.Calculo_potencia(sun_vector)
