@@ -50,7 +50,7 @@ class SatelitteSolarPowerSystem(object):
         self.name = self.nombrar_caras()
         self.actitud = SatelitteActitud
         self.Despegables_orientables = Despegables_orientables
-
+        self.Cara_actitud=self.cara_eje_actitud()
     def cargar_modelo(self, direccion):
         """
 
@@ -119,7 +119,15 @@ class SatelitteSolarPowerSystem(object):
         sombra = np.array(
             np.where(self.mesh.facets_on_hull == False)).flatten()
         return sombra
-
+    def cara_eje_actitud(self):
+        """buscar la cara mas cercana a los paneles que puede dar sombra
+        Returns:
+            sombra:numero de las caras que pueden tener sombra
+        """
+        for i in range(0, self.numero_caras):
+            if np.allclose(self.mesh.facets_normal[i], self.actitud.eje_de_spin):
+                cara_actitud=i
+        return cara_actitud
     def puntos_sol(self):
 
         p = self.mesh.facets[self.sombra].flatten()
@@ -212,56 +220,40 @@ class SatelitteSolarPowerSystem(object):
         else:
             if self.actitud.apuntado_sol == True:
                 direcion_principal = self.mesh.facets_normal[self.Caras_Despegables[0]]
-                direcion_principal = np.round(
-                    direcion_principal/np.linalg.norm(direcion_principal), 5)
+                eje=self.mesh.facets_normal[self.Cara_actitud]
+                plano0 = np.cross(Sun_vector, eje)
+                plano0 = plano0/np.linalg.norm(plano0)
 
-                matrix_projection = trimesh.transformations.projection_matrix(
-                    [0, 0, 0], self.actitud.eje_de_spin)[0:3, 0:3]
-                proyeccion = np.dot(matrix_projection, Sun_vector)
-                proyeccion = proyeccion/np.linalg.norm(proyeccion)
-                ver = np.arccos(np.dot(proyeccion, direcion_principal))
-                print(proyeccion)
-                if np.isnan(ver):
-                    ver = 0.0
-                if ver < 0.1e-4:
+                plano1 = np.cross(direcion_principal, eje)
+
+                plano1 = plano1/np.linalg.norm(plano1)
+
+                angulo_giro = np.arccos(np.absolute(
+                    np.dot(plano0, plano1)))/(np.linalg.norm(plano0)*np.linalg.norm(plano1))
+
+                if np.isnan(angulo_giro):
                     angulo_giro = 0.0
+
+                if angulo_giro == 0:
                     pass
                 else:
-
-                    # print("proyeccion",proyeccion)
-                    # print("direprinci",direcion_principal)
-                    #angulo_giro=np.arccos(np.absolute(np.dot(direcion_principal, proyeccion)))/(np.linalg.norm(direcion_principal)*np.linalg.norm(proyeccion))
-                    transforma = trimesh.geometry.align_vectors(
-                        direcion_principal, proyeccion)
-                    # posicion_eje=np.array(np.where(np.array(self.actitud.eje_de_spin)==1)).flatten().max()
-
-                    angulo_giro = trimesh.transformations.rotation_from_matrix(transforma)[
-                        0]
-                    dir = trimesh.transform_points(
-                        direcion_principal.reshape(1, 3), transforma)
-
-                    if np.absolute(angulo_giro) > 0.05:
-
-                        transforma2 = np.round(trimesh.geometry.align_vectors(
-                            direcion_principal, -proyeccion), 5)
-                        angulo_giro2 = trimesh.transformations.rotation_from_matrix(transforma2)[
-                            0]
-                        dir = trimesh.transform_points(
-                            direcion_principal.reshape(1, 3), transforma)
-
-                        if np.absolute(angulo_giro2) < np.absolute(angulo_giro):
-                            transforma = transforma2
-                            angulo_giro = angulo_giro2
-
-                        else:
-                            pass
+                    prim = trimesh.transform_points(plano1.reshape(1, 3), trimesh.transformations.rotation_matrix(
+                        angulo_giro, eje, [0, 0, 0]))
+                    if not np.allclose(prim, plano0):
+                        angulo_giro = -angulo_giro
+                    self.mesh = self.mesh.apply_transform(trimesh.transformations.rotation_matrix(
+                        angulo_giro, eje, [0, 0, 0]))
+            
+                    
                     # if plano1[posicion_eje]==0:
                     #   angulo_giro=0.0
-                    if np.isnan(angulo_giro):
-                        angulo_giro = 0.0
-                        pass
-                    else:
-                        self.mesh.apply_transform(transforma)
+                    # if np.isnan(angulo_giro):
+                    #     angulo_giro = 0.0
+                    #     pass
+                    # elif angulo_giro == 0:
+                    #     pass
+                    # else:
+                    #     self.mesh.apply_transform(transforma)
             else:
                 angulo_giro = 0.0       
 
@@ -287,7 +279,7 @@ class SatelitteSolarPowerSystem(object):
             index_tri = self.celdas_activas(Sun_vector)
             W, area_potencia, ang = self.power_panel_solar(
                 index_tri, Sun_vector, WSun)
-            angulo_giro = [np.NaN, np.NaN,np.NaN]
+            angulo_giro = 0.0
         else:
             W, area_potencia, ang, angulo_giro = self.power_panel_con_actitud(
                 Sun_vector, WSun)
@@ -329,7 +321,7 @@ if __name__ == '__main__':
         filename, actitud, Despegables_orientables=True)
     d.apply_transform(trimesh.transformations.rotation_matrix(
         np.pi/2, [0, 1, 0], [0, 0, 0]))
-    Sun_vector = np.array([-0.10486044,  0.91244007,  0.39554696])
-    print(d.mesh.facets_normal)
-    W, area_potencia, ang, angulo_giro = d.power_panel_con_actitud(
-        Sun_vector, 1)
+    # Sun_vector = np.array([-0.10486044,  0.91244007,  0.39554696])
+    # print(d.mesh.facets_normal)
+    # W, area_potencia, ang, angulo_giro = d.power_panel_con_actitud(
+    #     Sun_vector, 1)
