@@ -1,0 +1,26 @@
+ID Simulacion: V49LLU
+#############################
+############ Datos ##########
+#############################
+
+    #### Orbita ####
+    Semieje Mayor: 7278.0 km    
+    Excentricidad: 0.0  
+    Inclinacion:   90.0 deg  
+    RAAN:          135.0 deg 
+
+
+    #### Satelite #### 
+
+    Modelo:                 models/3U1P.stl 
+    Nº Caras:               7
+    Area Paneles            [30000. 30000. 10000. 30000. 10000. 30000. 90000.]
+    Paneles Despegables:    [0, 3, 6]
+    Normales Caras:         [[ 0. -1.  0.]
+ [ 0.  1. -0.]
+ [-1.  0.  0.]
+ [ 0.  0.  1.]
+ [ 1.  0.  0.]
+ [ 0. -0. -1.]
+ [ 0.  1. -0.]]
+    Nombres Caras:          ['Y-  Panel Despegable 0', 'Y+', 'X-', 'Z+  Panel Despegable 1', 'X+', 'Z-', 'Y+  Panel Despegable 2']

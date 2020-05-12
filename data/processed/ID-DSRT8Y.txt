@@ -1,0 +1,29 @@
+ID Simulacion: DSRT8Y
+#############################
+############ Datos ##########
+#############################
+
+    #### Orbita ####
+    Semieje Mayor: 7278.0 km    
+    Excentricidad: 0.0  
+    Inclinacion:   90.0 deg  
+    RAAN:          0.0 deg 
+
+
+    #### Satelite #### 
+
+    Modelo:                 models/3u4p.stl 
+    Nº Caras:               10
+    Area Paneles            [30000. 30000. 30000. 10000. 30000. 10000. 30000. 30000. 30000. 30000.]
+    Paneles Despegables:    [8, 9, 6, 7]
+    Normales Caras:         [[ 0.  0. -1.]
+ [-0.  0.  1.]
+ [-0. -1. -0.]
+ [ 1.  0.  0.]
+ [ 0.  1.  0.]
+ [-1.  0. -0.]
+ [-1.  0. -0.]
+ [-1.  0. -0.]
+ [-1.  0. -0.]
+ [-1.  0. -0.]]
+    Nombres Caras:          ['Z-', 'Z+', 'Y-', 'X+', 'Y+', 'X-', 'X-  Panel Despegable 0', 'X-  Panel Despegable 1', 'X-  Panel Despegable 2', 'X-  Panel Despegable 3']

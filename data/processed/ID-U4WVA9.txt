@@ -1,0 +1,27 @@
+ID Simulacion: U4WVA9
+#############################
+############ Datos ##########
+#############################
+
+    #### Orbita ####
+    Semieje Mayor: 7278.0 km    
+    Excentricidad: 0.0  
+    Inclinacion:   90.0 deg  
+    RAAN:          0.0 deg 
+
+
+    #### Satelite #### 
+
+    Modelo:                 models/12Unuv.stl 
+    Nº Caras:               8
+    Area Paneles            [ 60000.  60000.  40000.  60000.  40000.  60000. 179700. 179700.]
+    Paneles Despegables:    [6, 7]
+    Normales Caras:         [[ 0. -1.  0.]
+ [ 0.  1. -0.]
+ [-1.  0.  0.]
+ [ 0.  0.  1.]
+ [ 1.  0.  0.]
+ [ 0. -0. -1.]
+ [ 0. -1.  0.]
+ [ 0. -1.  0.]]
+    Nombres Caras:          ['Y-', 'Y+', 'X-', 'Z+', 'X+', 'Z-', 'Y-  Panel Despegable 0', 'Y-  Panel Despegable 1']

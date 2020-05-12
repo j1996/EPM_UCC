@@ -1,9 +1,29 @@
+"""
+ SatelitteActitud
+ Sistema de actitud
+"""
+
 import numpy as np
 import trimesh
 
 
 class SatelitteActitud(object):
+    """
+    SatelitteActitud 
+    Sistema de actitud
+
+    Args:
+        object ([type]): [description]
+    """
+
     def __init__(self, eje_de_spin, control):
+        """
+        __init__ [summary]
+
+        Args:
+            eje_de_spin (array): eje de spin
+            control (bool): controlado o no 
+        """
         self.control_en_actitud = control
         self.eje_de_spin = eje_de_spin
         self.apuntando_a_tierra = True

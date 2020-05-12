@@ -1,0 +1,26 @@
+ID Simulacion: 9WSVX8
+#############################
+############ Datos ##########
+#############################
+
+    #### Orbita ####
+    Semieje Mayor: 7278.0 km    
+    Excentricidad: 0.0  
+    Inclinacion:   90.0 deg  
+    RAAN:          0.0 deg 
+
+
+    #### Satelite #### 
+
+    Modelo:                 models/3U1P.stl 
+    Nº Caras:               7
+    Area Paneles            [30000. 30000. 10000. 30000. 10000. 30000. 90000.]
+    Paneles Despegables:    [0, 3, 6]
+    Normales Caras:         [[-0.00000e+00  0.00000e+00  1.00000e+00]
+ [ 0.00000e+00  0.00000e+00 -1.00000e+00]
+ [-1.00000e+00 -5.68434e-16  0.00000e+00]
+ [ 0.00000e+00  1.00000e+00  0.00000e+00]
+ [ 1.00000e+00  0.00000e+00  0.00000e+00]
+ [ 0.00000e+00 -1.00000e+00  0.00000e+00]
+ [ 0.00000e+00  0.00000e+00 -1.00000e+00]]
+    Nombres Caras:          ['Z+  Panel Despegable 0', 'Z-', 'X-', 'Y+  Panel Despegable 1', 'X+', 'Y-', 'Z-  Panel Despegable 2']

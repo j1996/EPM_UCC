@@ -1,3 +1,10 @@
+"""
+Orbitas 
+ Basicamente un monton de utilidades creadas para el programa principal
+
+Returns:
+    [type]: [description]
+"""
 from astropy.coordinates import get_sun
 from astropy.time import Time, TimeDelta
 from poliastro.bodies import Earth, Sun
@@ -19,7 +26,7 @@ def random_generator(size=6, chars=string.ascii_uppercase + string.digits):
 
     Returns:
         str: Codigo random
-    """    
+    """
     return ''.join(random.choice(chars) for x in range(size))
 
 
@@ -35,20 +42,19 @@ def SolarAngle_a_VNB(Orbit):
 
     Returns:
         array(3,1): Vector sol en GCRSS
-    """   
-    
-    #https://ai-solutions.com/_freeflyeruniversityguide/attitude_reference_frames.htm
+    """
+
+    # https://ai-solutions.com/_freeflyeruniversityguide/attitude_reference_frames.htm
     # se obtiene el vector sol en GCRS en coordenadas cartesianas
     sun = get_sun(Orbit.epoch).cartesian.xyz.value
     sun = sun / np.linalg.norm(sun)
 
-
     V = np.array(Orbit.v.value/(np.linalg.norm(Orbit.v)))
-    X = V #el vector velocidad es el eje X
+    X = V  # el vector velocidad es el eje X
     R = np.array(Orbit.r.value*1/(np.linalg.norm(Orbit.r)))
-    N = np.cross(R, V) 
+    N = np.cross(R, V)
     N = N/np.linalg.norm(N)
-    Y = N # El vector es en la direccion de la normal de la orbita
+    Y = N  # El vector es en la direccion de la normal de la orbita
     B = np.cross(X, Y)
     B = B/np.linalg.norm(B)
     Z = B
@@ -59,6 +65,7 @@ def SolarAngle_a_VNB(Orbit):
     solardirection = np.dot(np.linalg.inv(VNB), sun.reshape(3, 1))
     solardirection = np.array(solardirection).flatten()
     return solardirection
+
 
 def to_VNB(Orbit):
     """
@@ -71,16 +78,15 @@ def to_VNB(Orbit):
 
     Returns:
         np.array(3,3): [Matriz de cambio de base en una matriz 3x3]
-    """   
-    #https://help.agi.com/stk/11.0.1/Content/gator/eq-coordsys.htm
-    
-    
+    """
+    # https://help.agi.com/stk/11.0.1/Content/gator/eq-coordsys.htm
+
     V = np.array(Orbit.v.value/(np.linalg.norm(Orbit.v)))
-    X = V #el vector velocidad es el eje X
+    X = V  # el vector velocidad es el eje X
     R = np.array(Orbit.r.value*1/(np.linalg.norm(Orbit.r)))
-    N = np.cross(R, V) 
+    N = np.cross(R, V)
     N = N/np.linalg.norm(N)
-    Y = N # El vector es en la direccion de la normal de la orbita
+    Y = N  # El vector es en la direccion de la normal de la orbita
     B = np.cross(X, Y)
     B = B/np.linalg.norm(B)
     Z = B
@@ -88,8 +94,8 @@ def to_VNB(Orbit):
     #B = Orbit.h_vec.value/np.linalg.norm(Orbit.h_vec.value)
     VNB = np.column_stack((X.reshape(3, 1), Y.reshape(3, 1), Z.reshape(3, 1)))
 
-    
     return VNB
+
 
 def SolarRay_to_LVLH(Orbit):
     """
@@ -102,24 +108,25 @@ def SolarRay_to_LVLH(Orbit):
 
     Returns:
         np.array(3,1): Vector sol en GCRSS
-    """    
+    """
     sun = get_sun(Orbit.epoch).cartesian.xyz.value
     sun = sun / np.linalg.norm(sun)
     V = np.array(Orbit.v.value/(np.linalg.norm(Orbit.v)))
 
     R = -np.array(Orbit.r.value*1/(np.linalg.norm(Orbit.r)))
-    X=R
+    X = R
     Z = np.cross(V, R)
     Z = Z/np.linalg.norm(Z)
     Y = np.cross(Z, X)
     Y = Y/np.linalg.norm(Y)
-    
+
     LVLH = np.column_stack((X.reshape(3, 1), Y.reshape(3, 1), Z.reshape(3, 1)))
 
     solardirection = np.dot(np.linalg.inv(LVLH), sun.reshape(3, 1))
     solardirection = np.array(solardirection).flatten()
-    
+
     return solardirection
+
 
 def to_LVLH(Orbit):
     """
@@ -132,19 +139,20 @@ def to_LVLH(Orbit):
 
     Returns:
         np.array(3,3): Matriz de cambio de base en una matriz 3x3
-    """  
+    """
     V = np.array(Orbit.v.value/(np.linalg.norm(Orbit.v)))
 
     R = -np.array(Orbit.r.value*1/(np.linalg.norm(Orbit.r)))
-    X=R
+    X = R
     Z = np.cross(V, R)
     Z = Z/np.linalg.norm(Z)
     Y = np.cross(Z, X)
     Y = Y/np.linalg.norm(Y)
-    
+
     LVLH = np.column_stack((X.reshape(3, 1), Y.reshape(3, 1), Z.reshape(3, 1)))
-    
+
     return LVLH
+
 
 def EclipseLocator(Orbit):
     """
@@ -176,6 +184,7 @@ def EclipseLocator(Orbit):
 
         return False
 
+
 def propagate_orbit(a, ecc, inc, raan, nu,  time_ini, argp_ini, EPM, iteraciones_orbita=100, num_orbitas=1):
     """
     propagate_orbit 
@@ -198,7 +207,7 @@ def propagate_orbit(a, ecc, inc, raan, nu,  time_ini, argp_ini, EPM, iteraciones
         Area_potencia (array(:,iteraciones_orbita)) : Area que produce potencia pro cada cara 
         Ang (array(:,iteraciones_orbita)) : Angulo de incidencia del vector sol en la cara 
         Angulo_giro (array(:,iteraciones_orbita)): Angulo de giro de la orbita
-    """    
+    """
     w = []
     Area_potencia = []
     Ang = []
@@ -206,13 +215,12 @@ def propagate_orbit(a, ecc, inc, raan, nu,  time_ini, argp_ini, EPM, iteraciones
     sat = Orbit.from_classical(
         Earth, a, ecc, inc, raan, argp_ini, nu, time_ini)
     dt = sat.period.value/iteraciones_orbita
-    
+
     for p in np.arange(0, num_orbitas):
         for i in np.arange(0, iteraciones_orbita):
-            
-            sat=sat.propagate(dt*u.second)
 
-            
+            sat = sat.propagate(dt*u.second)
+
             if (EPM.actitud.apuntado_constante_sol == False):
                 if (i == 0):
                     EPM.actitud.apuntado_sol = True
@@ -237,8 +245,10 @@ def propagate_orbit(a, ecc, inc, raan, nu,  time_ini, argp_ini, EPM, iteraciones
             Ang.append(ang),
 
             Angulo_giro.append(angulo_giro)
-        
+
     return w, Area_potencia, Ang, Angulo_giro
+
+
 def propagate_fast_one_orbit(a, ecc, inc, raan, nu,  time_ini, argp_ini, EPM, iteraciones_orbita=100, num_orbitas=1):
     """
     propagate_fast_one_orbit 
@@ -262,7 +272,7 @@ def propagate_fast_one_orbit(a, ecc, inc, raan, nu,  time_ini, argp_ini, EPM, it
         Area_potencia (array(:,iteraciones_orbita)) : Area que produce potencia pro cada cara 
         Ang (array(:,iteraciones_orbita)) : Angulo de incidencia del vector sol en la cara 
         Angulo_giro (array(:,iteraciones_orbita)): Angulo de giro de la orbita
-    """ 
+    """
     w = []
     Area_potencia = []
     Ang = []
@@ -305,6 +315,7 @@ def propagate_fast_one_orbit(a, ecc, inc, raan, nu,  time_ini, argp_ini, EPM, it
         time_ini = time
     return w, Area_potencia, Ang, Angulo_giro
 
+
 def propagate_orbit2(a, ecc, inc, raan, nu,  time_ini, argp_ini, EPM, iteraciones_orbita=100, num_orbitas=1):
     """
     propagate_orbit2 
@@ -326,7 +337,7 @@ def propagate_orbit2(a, ecc, inc, raan, nu,  time_ini, argp_ini, EPM, iteracione
         Area_potencia (array(:,iteraciones_orbita)) : Area que produce potencia pro cada cara 
         Ang (array(:,iteraciones_orbita)) : Angulo de incidencia del vector sol en la cara 
         Angulo_giro (array(:,iteraciones_orbita)): Angulo de giro de la orbita
-    """ 
+    """
     w = []
     Area_potencia = []
     Ang = []
@@ -334,14 +345,14 @@ def propagate_orbit2(a, ecc, inc, raan, nu,  time_ini, argp_ini, EPM, iteracione
     sat = Orbit.from_classical(
         Earth, a, ecc, inc, raan, argp_ini, nu, time_ini)
     dt = sat.period.value/iteraciones_orbita
-    
+
     for p in np.arange(0, num_orbitas):
         for i in np.arange(0, iteraciones_orbita):
-            
-            sat=sat.propagate(dt*u.second)
+
+            sat = sat.propagate(dt*u.second)
             sun = get_sun(sat.epoch).cartesian.xyz.value
             sun = sun / np.linalg.norm(sun)
-            
+
             if (EPM.actitud.apuntado_constante_sol == False):
                 if (i == 0):
                     EPM.actitud.apuntado_sol = True
@@ -349,18 +360,18 @@ def propagate_orbit2(a, ecc, inc, raan, nu,  time_ini, argp_ini, EPM, iteracione
                     EPM.actitud.apuntado_sol = False
 
             if not EclipseLocator(sat):
-                trans=to_LVLH(sat)
-                trans2=np.zeros((4,4))
-                trans2[0:3,0:3]=trans
-                trans2[3,3]=1
+                trans = to_LVLH(sat)
+                trans2 = np.zeros((4, 4))
+                trans2[0:3, 0:3] = trans
+                trans2[3, 3] = 1
                 EPM.mesh.apply_transform(trans2)
                 W, area_potencia, ang, angulo_giro = EPM.Calculo_potencia(
                     sun)
             else:
-                trans=to_LVLH(sat)
-                trans2=np.zeros((4,4))
-                trans2[0:3,0:3]=trans
-                trans2[3,3]=1
+                trans = to_LVLH(sat)
+                trans2 = np.zeros((4, 4))
+                trans2[0:3, 0:3] = trans
+                trans2[3, 3] = 1
                 EPM.mesh.apply_transform(trans2)
                 W, area_potencia, ang, angulo_giro = EPM.Calculo_potencia(
                     sun)
@@ -374,8 +385,9 @@ def propagate_orbit2(a, ecc, inc, raan, nu,  time_ini, argp_ini, EPM, iteracione
             Ang.append(ang),
 
             Angulo_giro.append(angulo_giro)
-        
+
     return w, Area_potencia, Ang, Angulo_giro
+
 
 if __name__ == '__main__':
     time = Time("2018-09-28 00:00:00", scale="utc")
