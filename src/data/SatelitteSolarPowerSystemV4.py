@@ -38,7 +38,7 @@ class SatelitteSolarPowerSystem(object):
             """
         self.mesh = self.cargar_modelo(direccion)
         self.numero_caras = len(self.mesh.facets)
-        self.Normales_caras = self.mesh.facets_normal
+        self.Normales_caras = self.mesh.facets_normal #Normales de las caras en el momento 0
         self.Area_caras = self.mesh.facets_area
         self.caracteristicas_panel_solar = [
             Panel_Solar('Estandar')] * self.numero_caras
@@ -53,7 +53,7 @@ class SatelitteSolarPowerSystem(object):
 
     def cargar_modelo(self, direccion):
         """
-
+        cargar_modelo
         Args:
             direccion: string con la direcion del y con el tipo del archivo Ex. .STL, .OBJ, .PLY
 
@@ -64,7 +64,9 @@ class SatelitteSolarPowerSystem(object):
 
     def nombrar_caras(self):
         """
+        nombrar_caras
         Nombra las caras del modelo para poder utilizarlas se realiza al principio porque si se gira cambiara
+        Simplemente nombra las caras con X, Y, Z
         Returns:
             name: devuelve el nombre de las caras de manera X, Y, Z
         """
@@ -101,17 +103,23 @@ class SatelitteSolarPowerSystem(object):
         """
         caras_despegables = []
 
+        # si las caras se encuentran con otras sin volumen como los paneles, 
+        # esta las toman como rotas por trimesh por lo que se pueden localizar 
+
         for i in np.arange(0, len(trimesh.repair.broken_faces(self.mesh))):
+
             caras_despegables.append(
                 np.array(np.where(self.mesh.facets == trimesh.repair.broken_faces(self.mesh)[i])).flatten()[0])
 
         # se encuentran las caras que son despegables
-        caras_despegables = list(set(caras_despegables))
+        caras_despegables = list(set(caras_despegables)) # elimina las repetidas
 
         return caras_despegables
 
     def posible_sombra(self):
-        """buscar la cara mas cercana a los paneles que puede dar sombra
+        """
+        posible_sombra
+        buscar la cara mas cercana a los paneles que puede dar sombra
         Returns:
             sombra:numero de las caras que pueden tener sombra
         """
@@ -121,20 +129,42 @@ class SatelitteSolarPowerSystem(object):
         return sombra
 
     def puntos_sol(self):
+        """
+        puntos_sol 
+        Crea un conjunto de puntos de aquellos que darian sombra 
+        con los centros de los paneles
 
+        Returns:
+            trimesh.mesh : Plano de puntos 
+        """        
         p = self.mesh.facets[self.sombra].flatten()
         sun_plane = self.mesh.triangles_center[p]
 
         return sun_plane
 
     def celdas_activas(self, sun_vector):
+        """
+        celdas_activas 
+        Localiza las celdas activas de un mallado al buscarse los puntos donde golpearia un rayo en la malla des los puntos_sol
+
+        Args:
+            sun_vector (array(,3)) : Vector sol
+
+        Returns:
+            index_tri [array(n)]: El numero de triangulo que esta activo al ser golpeado por el sol 
+        """
+              
         sun_planeAux = self.puntos_sol()+5000*sun_vector
         ray_origins = sun_planeAux
         ray_directions = np.array([-sun_vector] * len(sun_planeAux))
-        if trimesh.ray.has_embree:
+
+        if trimesh.ray.has_embree: #Hay una  libreria que es embree solo funciona en linux pero va 50x mas rapido 
+
             index_tri = self.mesh.ray.intersects_first(
                 ray_origins=ray_origins, ray_directions=ray_directions)
+
         else:
+
             locations, index_ray, index_tri = self.mesh.ray.intersects_location(ray_origins=ray_origins,
                                                                                 ray_directions=ray_directions,
                                                                                 multiple_hits=False)
@@ -142,30 +172,64 @@ class SatelitteSolarPowerSystem(object):
         return index_tri
 
     def Add_prop_Panel(self, e):
+        """
+        Add_prop_Panel 
+        Añade propiedades al panel 
 
+        Args:
+            e (Panel_Solar): Panel Solar
+        """        
         self.caracteristicas_panel_solar.append(e)
 
     def power_panel_solar(self, index_tri, Sun_vector, WSun):
+        """
+        power_panel_solar 
+        Obtiene la potencia producida por el satelite con actitud fija 
+
+        Args:
+            index_tri (array(,:)): Celdas activas por el rayo 
+            Sun_vector (array(,3)): Vector sol en LVLH
+            WSun (float): Potencia irradiada por el sol 
+
+        Returns:
+            W (array(,n)) : Potencia generada
+            area_potencia (array(,n)) : Areas que generan potencia
+            ang (array(,n)) : Angulo de incidencia del vector sol con las caras
+
+        n : numero de caras
+        """
+
+        # Producto escalar       
+          
         ang = list(map(Sun_vector.dot, self.mesh.facets_normal))
-        # np.isin(self.index_tri, self.mesh.facets[9]).any()
+        
+        # Se inicializan las variables 
+
         area_potencia = []
         W = []
+
         for i in np.arange(0, len(self.mesh.facets)):
+
+            # Esto es para si consideramos que 
+
             if (i in self.Caras_Despegables) & (self.panel_despegable_dual == True) & (ang[i] < 0):
                 ang_inc = -ang[i]
             else:
                 ang_inc = ang[i]
+            
+            #Buscar en las zonas donde es posible la sombra el valor propocional de area en los que incide la luz
 
             if i in self.sombra:
                 o = np.isin(index_tri, self.mesh.facets[i])
                 o = o[o == True]
-                area = (
-                    len(o) / len(self.mesh.facets[i])) * self.mesh.facets_area[i] / (1000 ** 2)
+                area = (len(o) / len(self.mesh.facets[i])) * self.mesh.facets_area[i] / (1000 ** 2)
                 area_potencia.append(area)
             else:
-                area = self.mesh.facets_area[i] / (1000 ** 2)
+                area = self.mesh.facets_area[i] / (1000 ** 2) #esta en mm^2
                 area_potencia.append(area)
-
+            
+            # Esto es para eliminar las areas que no cumplen la ley de que menos de 15 grados no producen energia 
+            
             if (ang_inc >= 0) & (ang_inc > (np.cos((np.pi / 180) * 75))):
                 W.append(
                     area * self.caracteristicas_panel_solar[i].psolar_rendimiento * WSun * ang_inc)
@@ -175,8 +239,30 @@ class SatelitteSolarPowerSystem(object):
         return W, area_potencia, ang
 
     def power_panel_con_actitud(self, Sun_vector, WSun):
+        """
+        power_panel_con_actitud 
+        Obtiene la potencia producida por el satelite con actitud apuntando al sol
+
+        Args:
+            Sun_vector (array(,3)): Vector sol en LVLH
+            WSun (float): Potencia irradiada por el sol 
+
+        Returns:
+            W (array(,n)) : Potencia generada
+            area_potencia (array(,n)) : Areas que generan potencia
+            ang (array(,n)) : Angulo de incidencia del vector sol con las caras
+            angulo_giro (array(,n)) : Angulo de giro del satelite 
+        n : numero de caras
+        """   
+        # Si los paneles son fijos al satelite      
         if self.Despegables_orientables == False:
             if self.actitud.apuntado_sol == True:
+                
+                #aqui empieza la magia 
+                # la intencion era formar dos planos entre el eje de spin y el vector sol y otro 
+                # con el eje de spin y una direccion principal de los paneles solares 
+                # para poder calcular el angulo que deberia girarse entre los dos planos 
+
                 direcion_principal = self.mesh.facets_normal[self.Caras_Despegables[0]]
 
                 plano0 = np.cross(Sun_vector, self.actitud.eje_de_spin)
@@ -194,7 +280,11 @@ class SatelitteSolarPowerSystem(object):
 
                 if angulo_giro == 0:
                     pass
+
                 else:
+
+                    # Comprueba si la transformacion produciria que fuesen iguales los giros 
+
                     prim = trimesh.transform_points(plano1.reshape(1, 3), trimesh.transformations.rotation_matrix(
                         angulo_giro, self.actitud.eje_de_spin, [0, 0, 0]))
                     if not np.allclose(prim, plano0):
@@ -203,6 +293,7 @@ class SatelitteSolarPowerSystem(object):
                         angulo_giro, self.actitud.eje_de_spin, [0, 0, 0]))
             else:
                 angulo_giro = 0.0
+
             index_tri = self.celdas_activas(Sun_vector)
             W, area_potencia, ang = self.power_panel_solar(
                 index_tri, Sun_vector, WSun)
@@ -210,7 +301,13 @@ class SatelitteSolarPowerSystem(object):
             return W, area_potencia, ang, angulo_giro
 
         else:
+
             if self.actitud.apuntado_sol == True:
+
+                # mas magia por aqui 
+                # pero ahora con lo de la proyeccion en unos ejes para poder utilizar el giro
+                # esto funciona bastante bien el problema es cuando se pasa el ecuador 
+
                 direcion_principal = self.mesh.facets_normal[self.Caras_Despegables[0]]
                 direcion_principal = np.round(
                     direcion_principal/np.linalg.norm(direcion_principal), 5)
@@ -220,7 +317,7 @@ class SatelitteSolarPowerSystem(object):
                 proyeccion = np.dot(matrix_projection, Sun_vector)
                 proyeccion = proyeccion/np.linalg.norm(proyeccion)
                 ver = np.arccos(np.dot(proyeccion, direcion_principal))
-                print(proyeccion)
+                
                 if np.isnan(ver):
                     ver = 0.0
                 if ver < 0.1e-4:
@@ -269,6 +366,7 @@ class SatelitteSolarPowerSystem(object):
             area_potencia = []
             W = []
             angulo_giro = [angulo_giro]
+
             for i in np.arange(0, len(self.mesh.facets)):
                 area = self.mesh.facets_area[i] / (1000 ** 2)
                 area_potencia.append(area)
@@ -283,32 +381,73 @@ class SatelitteSolarPowerSystem(object):
             return W, area_potencia, ang, angulo_giro
 
     def Calculo_potencia(self, Sun_vector, WSun=1310):
+        """
+        Calculo_potencia 
+        Funcion general para llamar a las distintas funciones para calcular la potencia 
+
+        Args:
+            Sun_vector ([type]): [description]
+            WSun (int, optional): [description]. Defaults to 1310.
+
+        Returns:
+            W (array(,n)) : Potencia generada
+            area_potencia (array(,n)) : Areas que generan potencia
+            ang (array(,n)) : Angulo de incidencia del vector sol con las caras
+            angulo_giro (array(,n)) : Angulo de giro del satelite 
+        n : numero de caras
+        """      
         if self.actitud.control_en_actitud == False:
+
             index_tri = self.celdas_activas(Sun_vector)
             W, area_potencia, ang = self.power_panel_solar(
                 index_tri, Sun_vector, WSun)
-            angulo_giro = [np.NaN, np.NaN,np.NaN]
+            angulo_giro = []
+            [angulo_giro.append(np.NaN) for i in len(self.Caras_Despegables)] #Ya que no hay giro pero nos lo piden habra que crearlo
+
+
         else:
+
             W, area_potencia, ang, angulo_giro = self.power_panel_con_actitud(
                 Sun_vector, WSun)
 
         return W, area_potencia, ang, angulo_giro
 
     def apply_transform(self, matrix):
+        """
+        apply_transform 
+        creada para hacer coincidir correctamente las caras
+        aplica una transformacion al satelite y reinicia los nombres 
+
+        Args:
+            matrix (array(4,4)): matriz de transformacion
+        """        
         self.mesh = self.mesh.apply_transform(matrix)
         self.name = []
         self.name = self.nombrar_caras()
         self.Normales_caras = np.round(self.mesh.facets_normal)
 
     def visual(self):
+        """
+        visual 
+        Crea una imagen visual del satelite con unos ejes funciona muy bien en notebook 
+        y en linux tambien deberia de poder funcionar
 
+        Returns:
+            (scene): retoma una escena con los ejes
+        """        
         ax = trimesh.creation.axis(axis_radius=25, axis_length=200)
         scene = trimesh.Scene([self.mesh.apply_scale(1), ax])
 
         return scene.show()
 
     def separar_satelite(self):
+        """
+        separar_satelite 
+        Separa el satelite en mallas 
 
+        Returns:
+            [type]: [description]
+        """        
         y = np.array(
             np.where(np.isin(self.sombra, self.Caras_Despegables) == False)).flatten()
         despiece = []
